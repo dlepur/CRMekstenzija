@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "CRM Ticket Helper",
+    "version": "1.0",
+    "description": "Kreira poveznice za tikete u zahtjevima.",
+    "permissions": [
+      "activeTab"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["https://suitecrm.carnet.hr/*"],
+        "js": ["content.js"],
+        "css": ["styles.css"],
+        "runAt": ["document_end"]
+      }
+    ],
+    "host_permissions": [
+      "https://suitecrm.carnet.hr/*"
+    ]
+  }
+  

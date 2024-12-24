@@ -1,0 +1,50 @@
+    .btn-search {
+        display: inline-block; /* Ensures it behaves like an inline element */
+    }
+    
+    .rTHash {
+            display: inline-block;
+            margin-right: 0.6px;
+        }
+
+    .rTHash span {
+        padding: 4px 7px;
+        background-color: #aae9bf;
+        border-radius: 5px;
+        font-weight: bolder;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .rTHash span:active {
+        background-color: #3caa61;
+    }
+    
+    .btn-search:hover::before {
+      color: #f08377;
+    }
+  
+  /* Each icon wrapper */
+  .icon-wrapper {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px; /* Space between icons */
+    background-color: #f0837725;
+    border-radius: 5px;
+    padding: 4px 10px 4px 10px;
+  }
+  
+  .icon-wrapper:hover {
+    background-color: #f08377;
+  }
+  
+  /* Styles for the icon */
+  .fa-search {
+    cursor: pointer; /* Make it clickable */
+    border-right: 1px solid black;
+  }
+  
+  #RT-text-field {
+    background-color: white;
+  }
+

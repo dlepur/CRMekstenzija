@@ -1,7 +1,23 @@
 // Wait for the DOM content to be fully loaded
 if (window.location.hash.includes('ajaxUILoc')){
-    console.log('Hello');
-    sleep(2000).then(() => { startProgram(); });
+    // console.log('Opening Ajax version link.');
+    // sleep(2000).then(() => { startProgram(); });
+    let elementFound = false;
+    const observer = new MutationObserver((mutationList, observer) => {
+        for (let mutation of mutationList) {
+            if (mutation.type === 'childList') {
+                const targetElement = document.querySelector('#list_subpanel_cnt_rt_tasks_cases');
+                if (targetElement && !elementFound) {
+                    console.log('Element loaded via AJAX!');
+                    elementFound = true;
+                    observer.disconnect();
+                    startProgram();
+                }
+            }
+        }
+    })
+
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 else {
     startProgram();
@@ -34,7 +50,8 @@ function afterDOMLoaded(){
         console.log("rtBroj postoji nakon DOMContentLoaded", rtBroj);
       }
 
-      createIconsUnderTabContent(getCreatedTickets());
+      createIconsUnderTabContent(getCreatedTickets(), "Tiketi:");
+      createIconsUnderTabContent(getExternalTickets(), "Vanjski Tiketi:");
         
     //Everything that needs to happen after the DOM has initially loaded.
 }
@@ -43,6 +60,7 @@ function isEmpty(val) {
     return (val === undefined || val == null || val.length <= 0) ? true : false;
 }
 
+// dohvacanje tiketa koji su kreirani u istom zahtjevu
 function getCreatedTickets() {
     const rtIdFieldMatches = document
     .querySelectorAll("#list_subpanel_cnt_rt_tasks_cases > table > tbody > tr.evenListRowS1 > td:nth-child(3), #list_subpanel_cnt_rt_tasks_cases > table > tbody > tr.oddListRowS1 > td:nth-child(3)")
@@ -58,25 +76,59 @@ function getCreatedTickets() {
     return uniqRtIds;
 }
 
-function createIconsUnderTabContent(fields) {
+//dohvacanje tiketa koji su dodani u komentar zahtjeva, a nisu kreirani u istom zahtjevu
+function getExternalTickets() {
+    const pattern = /rt|tiket|ticket|[:#] ?(\d{6})/gmi;
+    let counter = 0;
+    var komentarTickets = new Set();
+    let text = document.getElementById("komentar_c").textContent;
+
+    if (text.length){
+        while (null != (z=pattern.exec(text))) {
+            console.log(z);
+            console.log(z[1]);
+            komentarTickets.add(z[1]);
+            counter++;
+        }
+        console.log("Counter tiketa iz komentara: ", counter);
+    
+        const createdTickets = getCreatedTickets();
+    
+        // diffTickets = new Set(createdTickets);
+        // for (const element of komentarTickets) {
+        //     diffTickets.delete(element);
+        // }
+    
+        diffTickets = getValueDifferential(createdTickets, [...komentarTickets]);
+    
+        return diffTickets;
+    }
+
+    return 0;
+}
+
+function createIconsUnderTabContent(fields, fieldLabel) {
+    // check if any tickets exist
+    if(fields.length){
     const tabContentDiv = document.getElementById('tab-content-0');
     if (!tabContentDiv) return; // Exit if the tab content div doesn't exist
 
-    // Create the outer div similar to the one you provided
-    let detailViewRow = document.createElement('div');
-    detailViewRow.classList.add('row', 'detail-view-row');
+    // div-ovi isti kao s polja: Komentar, Rješenje problema, Opis problema...
+	let detailViewRow = document.createElement('div');
+	detailViewRow.classList.add('row', 'detail-view-row');
 
-    // Create the first column for the label
-    let labelCol = document.createElement('div');
-    labelCol.classList.add('col-xs-12', 'col-sm-2', 'label', 'col-1-label');
-    labelCol.textContent = 'Tiketi:'; // Set the label text
+	let detailViewRowItem = document.createElement('div');
+	detailViewRowItem.classList.add('col-xs-12', 'col-sm-12', 'detail-view-row-item');
 
-    // Create the second column for the icons without the inlineEdit class
-    let iconsCol = document.createElement('div');
-    iconsCol.classList.add('col-xs-12', 'col-sm-10', 'detail-view-field'); // Removed 'inlineEdit'
-    iconsCol.id = 'RT-text-field';
+	let colOneLabel = document.createElement('div');
+	colOneLabel.classList.add('col-xs-12', 'col-sm-2', 'label', 'col-1-label');
+    colOneLabel.textContent = fieldLabel;
 
-    // Create icons directly inside the icons column without a container
+	let iconsCol = document.createElement('div');
+	iconsCol.classList.add('col-xs-12', 'col-sm-10', 'detail-view-field');
+	iconsCol.id = 'RT-text-field';
+
+    //dodavanje tiket gumba za svaki pronadeni tiket
     for (let field of fields) {
         if (field) {
             const googleSearchUrl = `https://tt.carnet.hr/rt/Ticket/Display.html?id=${encodeURIComponent(field)}`;
@@ -137,11 +189,33 @@ function createIconsUnderTabContent(fields) {
     }
 
     // Append both columns to the detail view row
-    detailViewRow.appendChild(labelCol);
-    detailViewRow.appendChild(iconsCol);
+	detailViewRow.appendChild(detailViewRowItem);
+    detailViewRowItem.appendChild(colOneLabel);
+    detailViewRowItem.appendChild(iconsCol);
 
     // Append the detail view row to the tab content div
     tabContentDiv.appendChild(detailViewRow);
+    }  
+}
+
+function getValueDifferential(smallerArray, biggerArray){
+
+    let exists = 0;
+    const foundExternalTickets = new Set();
+
+    for (vanjski of biggerArray){
+        for (kreirani of smallerArray){
+            if (vanjski === kreirani)
+                exists=1;
+        }
+        if(!exists)
+            foundExternalTickets.add(vanjski);
+        exists = 0;
+    }
+
+    console.log("Tiketi iz komentara koji su vanjski", [...foundExternalTickets]);
+
+    return [...foundExternalTickets];
 }
 
 function sleep(ms) {

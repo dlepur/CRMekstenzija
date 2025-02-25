@@ -50,8 +50,17 @@ function afterDOMLoaded(){
         console.log("rtBroj postoji nakon DOMContentLoaded", rtBroj);
       }
 
-      createIconsUnderTabContent(getCreatedTickets(), "Tiketi:");
-      createIconsUnderTabContent(getExternalTickets(), "Vanjski Tiketi:");
+      const createdTickets = getCreatedTickets();
+      const externalTickets = getExternalTickets();
+
+      if(externalTickets || createdTickets)
+        document.querySelector('[data-field=komentar_c]').setAttribute('style', 'margin-bottom=1px;');
+
+      if(externalTickets)
+        createIconsUnderTabContent(externalTickets, "Vanjski Tiketi:");
+
+      if(createdTickets)
+        createIconsUnderTabContent(createdTickets, "Tiketi:");
         
     //Everything that needs to happen after the DOM has initially loaded.
 }
@@ -78,7 +87,7 @@ function getCreatedTickets() {
 
 //dohvacanje tiketa koji su dodani u komentar zahtjeva, a nisu kreirani u istom zahtjevu
 function getExternalTickets() {
-    const pattern = /rt|tiket|ticket|[:#] ?(\d{6})/gmi;
+    const pattern = /(?:rt|tic?ket)[:#-]? ?(\d{6})/gmi;
     let counter = 0;
     var komentarTickets = new Set();
     let text = document.getElementById("komentar_c").textContent;
@@ -104,14 +113,16 @@ function getExternalTickets() {
         return diffTickets;
     }
 
-    return 0;
+    return null;
 }
 
 function createIconsUnderTabContent(fields, fieldLabel) {
     // check if any tickets exist
     if(fields.length){
-    const tabContentDiv = document.getElementById('tab-content-0');
-    if (!tabContentDiv) return; // Exit if the tab content div doesn't exist
+    console.log(fieldLabel, "broj: ", fields)
+    const tabContentDiv = document.getElementById('tab-content-0'); // dohvaca cijeli div od "Naziv zahtjeva:" do "Komentar:". Problem je sto se zahtjev nekad generira tako da polja "Riješenje problema:" i "Komentar:" budu izvan ove klase, pa sam odustao od ovog nacina
+    const tabContentDiv2 = document.querySelector('[data-field=komentar_c]'); // dohvaca samo "komentar polje"
+    if (!tabContentDiv2) return; // Exit if the tab content div doesn't exist
 
     // div-ovi isti kao s polja: Komentar, Rješenje problema, Opis problema...
 	let detailViewRow = document.createElement('div');
@@ -119,10 +130,12 @@ function createIconsUnderTabContent(fields, fieldLabel) {
 
 	let detailViewRowItem = document.createElement('div');
 	detailViewRowItem.classList.add('col-xs-12', 'col-sm-12', 'detail-view-row-item');
+    detailViewRowItem.setAttribute('style', 'margin-top: 1px;');
 
 	let colOneLabel = document.createElement('div');
 	colOneLabel.classList.add('col-xs-12', 'col-sm-2', 'label', 'col-1-label');
     colOneLabel.textContent = fieldLabel;
+    colOneLabel.setAttribute('style', 'padding-top: 14.007px;');
 
 	let iconsCol = document.createElement('div');
 	iconsCol.classList.add('col-xs-12', 'col-sm-10', 'detail-view-field');
@@ -189,15 +202,17 @@ function createIconsUnderTabContent(fields, fieldLabel) {
     }
 
     // Append both columns to the detail view row
-	detailViewRow.appendChild(detailViewRowItem);
+	//detailViewRow.appendChild(detailViewRowItem);
     detailViewRowItem.appendChild(colOneLabel);
     detailViewRowItem.appendChild(iconsCol);
 
     // Append the detail view row to the tab content div
-    tabContentDiv.appendChild(detailViewRow);
+    //tabContentDiv.appendChild(detailViewRow);
+    tabContentDiv2.insertAdjacentElement("afterend", detailViewRowItem);
     }  
 }
 
+// vraca tikete zapisane u komentaru koji nisu kreirani bas u zahtjevu
 function getValueDifferential(smallerArray, biggerArray){
 
     let exists = 0;
